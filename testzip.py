@@ -25,6 +25,10 @@ z = ZipFile("2021-07-07T161552_VeeamBackupLogs.zip", "r")
 
 
 
+pattern_vbr_version = 'version: \[(.*)\], Assembly'
+
+
+
 def match_file_pattern(filename):
   ## Patterns
   # String pattern
@@ -40,38 +44,67 @@ def match_file_pattern(filename):
   lines_without_error = 1
   is_file_clear = 1
 
+
+  # Counters
+  depth = 2
+  depth_counter = 0
+
   # Lists
   reversed_out_list = []
+  out_list = []
+
+
+  # Output lines
+  reversed_out = ''
 
   m_file_p = file_p.match(filename)
   if m_file_p:
     is_file_clear = 1
-    reversed_out_list.append(str('File: ' + filename))
-    print('File:', filename)
+    # add log file name to a file then apped the matched to a reversed list
+
+    #reversed_out_list.append(str('File: ' + filename))
+    #reversed_out_list = ['10', '8', '5', '2', '1']
+    # print('File:', filename)
     bytes_archive = z.read(filename)
-    #print(bytes_archive.decode('utf-8'))
-    # Print file size
-    print('Size', round(len(bytes_archive)/1024/1024,2), 'MB', '\n')
+
+    # Add file name
+    file_name = "File: " + filename
+    out_list.append(file_name)
+    
+    # Add file size
+    # print('Size', round(len(bytes_archive)/1024/1024,2), 'MB', '\n')
+    file_size = 'Size: ' + str(round(len(bytes_archive)/1024/1024,2)) + ' MB' + '\n'
+    out_list.append(file_size)
+    #print(out_list[-1])
+
+
+
     string_list = bytes_archive.decode('utf-8').split('\n')
-    for line in string_list:
-    #for line in reversed(string_list):
-    #for line in bytes.decode('utf-8').split('\n'):
-    #print(type(bytes.decode('utf-8')))
-    #for line in read_reverse_order(bytes.decode('utf-8')):
-      if not (is_previous_line_error or (lines_without_error > 1)) :
-        print('...')
+
+    # go through lines in straight order
+    #for line in string_list:
+    # go through lines in reverse order
+    for line in reversed(string_list):
+      if not (is_previous_line_error or (lines_without_error > 1)):  #and depth_counter < depth:
+        #print('...')
         reversed_out_list.append('...')
-        print(reversed_out_list)
+        depth_counter += 1
+        #print(f"depth is {depth}")
+        #print(f"depth_counter is {depth_counter}")
+        if depth_counter > depth:
+            #print(f"DEPTH OF {depth_counter - 1} reached")
+            break
+        #print(reversed_out_list)
 
       m = p.match(line)
       #m2 = p2.match(line)
-      m2 = re.search('version: \[(.*)\], Assembly', line)
-      if m2:
-        #print(m2.match("File version: \[[0-9].*\]"))
-        print(m2.group(1))
+      m2 = re.search(pattern_vbr_version, line)
+#      if m2:
+#        print(m2.group(1))
 
       if m:
-        print(m.group())
+        #print(m.group())
+        reversed_out_list.append(m.group())
         is_previous_line_error = 1
         lines_without_error = 0
         is_file_clear = 0
@@ -80,10 +113,26 @@ def match_file_pattern(filename):
         lines_without_error += 1 
      
     if is_file_clear:
-      print("No errors were found")
-    print()
-    print('-' * 30, '\n')
-    return(reversed_out_list)
+      out_list.append("No errors were found")
+      #print("No errors were found")
+    delimiter = '\n' + ('-' * 30) + '\n'
+    #print()
+    #print(delimiter)
+    #print('-' * 30, '\n')
+#    return(reversed_out_list)
+
+    #print(reversed_out_list)
+
+    #reversed_out_list = ['10', '8', '5', '2', '1']
+
+    while reversed_out_list:
+      out_list.append(reversed_out_list.pop())
+      #print(reversed_out_list.pop())
+
+    out_list.append(delimiter)
+
+    for i in out_list:
+        print(i)
 
 
 for filename in z.namelist():
@@ -92,5 +141,4 @@ for filename in z.namelist():
 
   # match for file name pattern
   match_file_pattern(filename)
-
 
