@@ -1,3 +1,5 @@
+# https://thispointer.com/python-read-a-file-in-reverse-order-line-by-line/
+
 import os
 def read_reverse_order(file_name):
     # Open file for reading in binary mode
