@@ -19,8 +19,8 @@ from read_reverse_order import read_reverse_order
 
 # Set depth value
 #error_depth = 3
-error_depth = 1
-job_depth = 1
+error_depth = 0
+job_depth = 0
 
 archive_name = "2021-07-07T161552_VeeamBackupLogs.zip"
 
@@ -58,7 +58,7 @@ def match_file_pattern(archive_name, error_depth, job_depth):
     job_depth_counter = 0
 
     # Lists
-    reversed_out_list = []
+    #reversed_out_list = []
     out_list = []
 
 
@@ -88,7 +88,7 @@ def match_file_pattern(archive_name, error_depth, job_depth):
       #for line in string_list:
 
       # go through lines in reverse order
-      for line in reversed(string_list):
+      for line in string_list:
 
         #match_job_start_time = re.search(pattern_job_start_time, line)
         #if match_job_start_time:
@@ -100,23 +100,22 @@ def match_file_pattern(archive_name, error_depth, job_depth):
         #  pass
         
         #---------------
+        match_job_start_time = re.search(pattern_job_start_time, line)
+        if match_job_start_time:
+          out_list.append('Start time: ' + match_job_start_time.group(1) + '\n')
+
         match_vbr_version = re.search(pattern_vbr_version, line)
         if match_vbr_version:
-          reversed_out_list.append('\nVBR version: ' + match_vbr_version.group(1))
-          #if job_depth_counter > job_depth:
+          out_list.append('\nVBR version: ' + match_vbr_version.group(1))
           job_depth_counter += 1
           if job_depth != 0 and job_depth_counter >= job_depth:
             break
-
-        match_job_start_time = re.search(pattern_job_start_time, line)
-        if match_job_start_time:
-          reversed_out_list.append('Start time: ' + match_job_start_time.group(1) + '\n')
         #---------------
         
          
         if not (is_previous_line_error or (lines_without_error > 1)) and not is_file_clear: 
           #print('...')
-          reversed_out_list.append('...')
+          out_list.append('...')
           error_depth_counter += 1
           #print(f"depth is {depth}")
           #print(f"depth_counter is {depth_counter}")
@@ -129,7 +128,7 @@ def match_file_pattern(archive_name, error_depth, job_depth):
   
         if m:
           #print(m.group())
-          reversed_out_list.append(m.group())
+          out_list.append(m.group())
           is_previous_line_error = 1
           lines_without_error = 0
           is_file_clear = 0
@@ -142,8 +141,8 @@ def match_file_pattern(archive_name, error_depth, job_depth):
         #print("No errors were found")
   
   
-      while reversed_out_list:
-        out_list.append(reversed_out_list.pop())
+      #while reversed_out_list:
+      #  out_list.append(reversed_out_list.pop())
   
       # Add a delimiter between files
       delimiter = '\n' + ('-' * 30) + '\n'
