@@ -6,6 +6,18 @@ import re
 import time
 from time import strftime
 
+
+"""##
+For future. How to parse xml to list
+
+x = etree.parse("job_options2.txt")
+mystr = etree.tostring(x, pretty_print=True)
+mylist = mystr.decode('utf-8').split('\n')
+for i in mylist:
+    print(i)
+
+##"""
+
 def main():
     #log_file_path = r"C:\ios logs\sfbios.log"
     archive_file_path = "2021-07-07T161552_VeeamBackupLogs.zip"
@@ -44,16 +56,27 @@ def parseData(string_list, export_file, p_error):
     #print(string_list)
     pattern_job_start_time = 'start time: \[(.*)\],'
     out_list = [[] for i in range(3)]
+
+    summary = []
+    job_parameters = []
+    error_lines = []
+
+    #!! Dictionary of lists:
+    #{'summary' : [list_of_summary_lines], 'job_options' : [list_of_job_option_parameters], 'error' : [list_of_error_lines]}
+    out_dict = {'summary' : summary, 'job_options' : job_parameters, 'error' : error_lines}
+
     #out_list = []
     for line in string_list:
         #print(line)
         match_job_start_time = re.search(pattern_job_start_time, line)
         if match_job_start_time:
             out_list[0].append('Start time: ' + match_job_start_time.group(1) + '\n')
+            out_dict['summary'].append('Start time: ' + match_job_start_time.group(1) + '\n')
 
         m_error = p_error.match(line)
         if m_error:
-            out_list[2].append(m_error.group())
+            #out_list[2].append(m_error.group())
+            out_dict['error'].append(m_error.group())
             #print(out_list)
             #print(match_job_start_time)
 #    with open(log_file_path, "r") as file:
@@ -86,11 +109,17 @@ def parseData(string_list, export_file, p_error):
         #    print(item)
         #    file.write(item + "\n")
 
+        for value in out_dict.values():
+            print(value)
+            for line in value:
+                print(line)
+                file.write(line + "\n")
+
+
         # working fine with 2D list
-        for item in out_list:
+        #for item in out_list:
         #    print(*item, sep='\n')
-            #file.writelines('\t'.join(str(j + '\n') for j in i) + '\n' for i in out_list)
-            file.writelines(''.join(str(j + '\n') for j in i) + '\n' for i in out_list)
+        #    file.writelines(''.join(str(j + '\n') for j in i) + '\n' for i in out_list)
 
     file.close()
     #return match_list_clean
