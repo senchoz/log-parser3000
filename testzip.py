@@ -114,7 +114,7 @@ def match_file_pattern(archive_name, error_depth, job_depth):
             #---------------
             
              
-            if not is_previous_line_error or not (lines_without_error > 1):
+            if not is_previous_line_error and not (lines_without_error > 1):
               #print('...')
               error_stack_list.append(error_stack)
               error_stack = ''
@@ -133,9 +133,9 @@ def match_file_pattern(archive_name, error_depth, job_depth):
               out_list.append(match_error.group())
 
               # Append new line and error line to error_stack
-              #error_stack += '\n' + match_error.group()
-              error_stack += match_error.group()
-              print(f"New Error Stack: \n{error_stack}")
+              error_stack += '\n' + match_error.group()
+              #error_stack += match_error.group()
+              #print(f"New Error Stack: \n{error_stack}")
               is_previous_line_error = 1
               lines_without_error = 0
             else:
@@ -148,8 +148,9 @@ def match_file_pattern(archive_name, error_depth, job_depth):
   
       #for i in out_list:
           #print(i)
+      print(error_stack_list)
   
-      #for i in error_stack_list:
-          #print(i)
+      for i in error_stack_list:
+          print(i)
   
 match_file_pattern(archive_name, error_depth, job_depth)
