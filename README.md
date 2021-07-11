@@ -25,10 +25,28 @@ Wrong:
 Whole file (string) >> split to strings by '\n' (one line - one string) >> List of all strings in file >> List of all strings in job
 
 Correct:
-Whole file (string) >> split to strings by '==========' (one job - one string) >> List of all strings in job
+Whole file (string) >> split to strings by '==========' (one job - one string) >> put job-strings to list >> pick a N job-string >> List of all strings in job
 
 Intermediate output:
-list_job_string = [version_string, job_options_string, [error_stack1_string, error_stack2_string]]
+list_job_strings = [job_string1, job_string2, ..., job_stringN]
+
+#Pick job-string, split it to strings by '\n', put them to list of all strings for current job
+job_string >> list_job_strings
+list_job_strings = [version_string, job_options_string, [error_stack1_string, error_stack2_string]]
+
+# We can later pick the certain number of last N jobs
+list_job_strings[-N:]
+
+# Example for picking last 2 elements 
+N = 2
+my_string = [12, 23, 34, 45]
+my_string[-N:]
+[34, 45]
+
+
+Process
+
+Final output
 
 
 
