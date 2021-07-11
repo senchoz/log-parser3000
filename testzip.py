@@ -39,10 +39,8 @@ def match_file_pattern(archive_name, error_depth, job_depth):
     #match_file_pattern(filename)
 
     ## Patterns
-    # String pattern
-    p = re.compile(".*(Error)  .*")
-    p2 = re.compile(".*Backup.Manager.*File version: \[[0-9].*\]")
-    #p = re.compile(".*(Error|Warning)  .*")
+    # Error string pattern
+    pattern = re.compile(".*(Error)  .*")
 
     # File name pattern
     file_p = re.compile(".*Job.*log")
@@ -50,7 +48,6 @@ def match_file_pattern(archive_name, error_depth, job_depth):
     ## Flags
     is_previous_line_error = 0
     lines_without_error = 0
-    is_file_clear = 1
 
 
     # Counters
@@ -64,7 +61,6 @@ def match_file_pattern(archive_name, error_depth, job_depth):
 
     m_file_p = file_p.match(filename)
     if m_file_p:
-      is_file_clear = 1
       # add log file name to a file then append the matched to a reversed list
 
       # print('File:', filename)
@@ -82,74 +78,78 @@ def match_file_pattern(archive_name, error_depth, job_depth):
       # Decode bytes for current log file in archive 
       # Split the decoded bytes to strings
       # Add them to a new list
-      string_list = bytes_archive.decode('utf-8').split('\n')
-  
-      # go through lines in straight order
-      #for line in string_list:
+      #list_job_strings = bytes_archive.decode('utf-8').split('\n')
+      job_list = bytes_archive.decode('utf-8').split('Starting new log')
+      #job_list = bytes_archive.decode('utf-8').split('===================================================================')
 
-      # go through lines in reverse order
-      for line in string_list:
+      error_stack_list = [] 
+      out_job_list = []
+  
+      for job in job_list:
+          job_strings_list = job.split('\n')
+          #print(f"NEW JOB: \n {job}")
 
-        #match_job_start_time = re.search(pattern_job_start_time, line)
-        #if match_job_start_time:
-        #  out_list.append('Start time: ' + match_job_start_time.group(1))
-         
-        #match_vbr_version = re.search(pattern_vbr_version, line)
-        #if match_vbr_version:
-        #  out_list.append('VBR version: ' + match_vbr_version.group(1) + '\n')
-        #  pass
-        
-        #---------------
-        match_job_start_time = re.search(pattern_job_start_time, line)
-        if match_job_start_time:
-          out_list.append('Start time: ' + match_job_start_time.group(1) + '\n')
+          # Error lines of one stack will be concatenated to this string
+          error_stack = ''
+          
+          # go through lines in straight order
+          for line in job_strings_list:
+            #print(f"NEW JOB: \n {line}")
+            #print(f"*{line}")
+            
+            #---------------
+            match_job_start_time = re.search(pattern_job_start_time, line)
+            if match_job_start_time:
+              out_list.append('Start time: ' + match_job_start_time.group(1) + '\n')
+              out_job_list.append('Start time: ' + match_job_start_time.group(1) + '\n')
 
-        match_vbr_version = re.search(pattern_vbr_version, line)
-        if match_vbr_version:
-          out_list.append('\nVBR version: ' + match_vbr_version.group(1))
-          job_depth_counter += 1
-          if job_depth != 0 and job_depth_counter >= job_depth:
-            break
-        #---------------
-        
-         
-        if not (is_previous_line_error or (lines_without_error > 1)) and not is_file_clear: 
-          #print('...')
-          out_list.append('...')
-          error_depth_counter += 1
-          #print(f"depth is {depth}")
-          #print(f"depth_counter is {depth_counter}")
-          #if not (error_depth != 0 or error_depth_counter > error_depth):
-          if error_depth != 0 and error_depth_counter >= error_depth:
-              #print(f"DEPTH OF {depth_counter - 1} reached")
-              break
+
+            match_vbr_version = re.search(pattern_vbr_version, line)
+            if match_vbr_version:
+              out_list.append('\nVBR version: ' + match_vbr_version.group(1))
+              out_job_list.append('\nVBR version: ' + match_vbr_version.group(1))
+              job_depth_counter += 1
+              if job_depth != 0 and job_depth_counter >= job_depth:
+                break
+            #---------------
+            
+             
+            if not is_previous_line_error or not (lines_without_error > 1):
+              #print('...')
+              error_stack_list.append(error_stack)
+              error_stack = ''
+              #error_depth_counter += 1
+              #print(f"depth is {depth}")
+              #print(f"depth_counter is {depth_counter}")
+
+              #if error_depth != 0 and error_depth_counter >= error_depth:
+                  #print(f"DEPTH OF {depth_counter - 1} reached")
+                  #break
+      
+            match_error = pattern.match(line)
+      
+            if match_error:
+              # Grab the whole matching line and apped it to out list
+              out_list.append(match_error.group())
+
+              # Append new line and error line to error_stack
+              #error_stack += '\n' + match_error.group()
+              error_stack += match_error.group()
+              print(f"New Error Stack: \n{error_stack}")
+              is_previous_line_error = 1
+              lines_without_error = 0
+            else:
+              is_previous_line_error = 0
+              lines_without_error += 1 
+           
+          # Add a delimiter between files
+          delimiter = '\n' + ('-' * 30) + '\n'
+          out_list.append(delimiter)
   
-        m = p.match(line)
+      #for i in out_list:
+          #print(i)
   
-        if m:
-          #print(m.group())
-          out_list.append(m.group())
-          is_previous_line_error = 1
-          lines_without_error = 0
-          is_file_clear = 0
-        else:
-          is_previous_line_error = 0
-          lines_without_error += 1 
-       
-      if is_file_clear:
-        out_list.append("No errors were found")
-        #print("No errors were found")
-  
-  
-      #while reversed_out_list:
-      #  out_list.append(reversed_out_list.pop())
-  
-      # Add a delimiter between files
-      delimiter = '\n' + ('-' * 30) + '\n'
-      out_list.append(delimiter)
-  
-      for i in out_list:
-          print(i)
-  
+      #for i in error_stack_list:
+          #print(i)
   
 match_file_pattern(archive_name, error_depth, job_depth)
