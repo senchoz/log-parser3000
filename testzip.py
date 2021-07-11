@@ -43,11 +43,12 @@ def match_file_pattern(archive_name, error_depth, job_depth):
     pattern = re.compile(".*(Error)  .*")
 
     # File name pattern
-    file_p = re.compile(".*Job.*log")
+    file_pattern = re.compile(".*Job.*log")
 
     ## Flags
     is_previous_line_error = 0
     lines_without_error = 0
+    is_file_clear = 1
 
 
     # Counters
@@ -58,9 +59,12 @@ def match_file_pattern(archive_name, error_depth, job_depth):
     #reversed_out_list = []
     out_list = []
 
+    error_stack_list = [] 
+    out_job_list = []
 
-    m_file_p = file_p.match(filename)
-    if m_file_p:
+    match_file_pattern = file_pattern.match(filename)
+    if match_file_pattern:
+      is_file_clear = 1
       # add log file name to a file then append the matched to a reversed list
 
       # print('File:', filename)
@@ -69,10 +73,12 @@ def match_file_pattern(archive_name, error_depth, job_depth):
       # Add file name
       file_name = "File: " + filename
       out_list.append(file_name)
+      out_job_list.append(file_name)
       
       # Add file size
       file_size = 'Size: ' + str(round(len(bytes_archive)/1024/1024,2)) + ' MB' + '\n'
       out_list.append(file_size)
+      out_job_list.append(file_size)
   
   
       # Decode bytes for current log file in archive 
@@ -82,8 +88,6 @@ def match_file_pattern(archive_name, error_depth, job_depth):
       job_list = bytes_archive.decode('utf-8').split('Starting new log')
       #job_list = bytes_archive.decode('utf-8').split('===================================================================')
 
-      error_stack_list = [] 
-      out_job_list = []
   
       for job in job_list:
           job_strings_list = job.split('\n')
@@ -114,7 +118,7 @@ def match_file_pattern(archive_name, error_depth, job_depth):
             #---------------
             
              
-            if not is_previous_line_error and not (lines_without_error > 1):
+            if not is_previous_line_error and not (lines_without_error > 1) and not is_file_clear:
               #print('...')
               error_stack_list.append(error_stack)
               error_stack = ''
@@ -131,9 +135,13 @@ def match_file_pattern(archive_name, error_depth, job_depth):
             if match_error:
               # Grab the whole matching line and apped it to out list
               out_list.append(match_error.group())
+              out_job_list.append(match_error.group())
+
+              is_file_clear = 0 
 
               # Append new line and error line to error_stack
               error_stack += '\n' + match_error.group()
+
               #error_stack += match_error.group()
               #print(f"New Error Stack: \n{error_stack}")
               is_previous_line_error = 1
@@ -142,15 +150,27 @@ def match_file_pattern(archive_name, error_depth, job_depth):
               is_previous_line_error = 0
               lines_without_error += 1 
            
+          #print(out_job_list)
           # Add a delimiter between files
           delimiter = '\n' + ('-' * 30) + '\n'
           out_list.append(delimiter)
+          out_job_list.append(delimiter)
   
-      #for i in out_list:
-          #print(i)
-      print(error_stack_list)
+      #for i in out_job_list:
+      #    print(i)
+      #print(error_stack_list)
   
-      for i in error_stack_list:
+      error_depth = 3
+      job_depth = 1
+
+      # Working good, but only shows last N error stacks
+      for i in error_stack_list[-error_depth:]:
           print(i)
+
+      # Should return last N jobs and last M errors stacks
+      #for job in out_job_list[-job_depth:]:
+      #    print(job)
+      #    for i in error_stack_list[-error_depth:]:
+      #        print(i)
   
 match_file_pattern(archive_name, error_depth, job_depth)
