@@ -34,6 +34,11 @@ pattern_job_start_time = 'start time: \[(.*)\],'
 
 def match_file_pattern(archive_name, error_depth, job_depth):
   z = ZipFile(archive_name, "r")
+
+  #####################################################################
+  # start going over matching files in archive
+  #####################################################################
+
   for filename in z.namelist():
     # match for file name pattern
     #match_file_pattern(filename)
@@ -63,6 +68,10 @@ def match_file_pattern(archive_name, error_depth, job_depth):
     out_job_list = []
 
     match_file_pattern = file_pattern.match(filename)
+
+
+
+
     if match_file_pattern:
       is_file_clear = 1
       # add log file name to a file then append the matched to a reversed list
@@ -84,7 +93,8 @@ def match_file_pattern(archive_name, error_depth, job_depth):
       file_elements = ['', []]
 
       #file_list[0] += file_name + file_size
-      file_details = file_elements[0] += file_name + file_size
+      file_elements[0] += file_name + file_size
+      #file_details = file_elements[0] += file_name + file_size
       #file_details += file_name + file_size
       jobs = file_elements[1]
 
@@ -97,20 +107,26 @@ def match_file_pattern(archive_name, error_depth, job_depth):
       job_list = bytes_archive.decode('utf-8').split('Starting new log')
       #job_list = bytes_archive.decode('utf-8').split('===================================================================')
 
-  
+      
+      #####################################################################
+      # start going over jobs in job list
+      #####################################################################
+
       for job in job_list:
           job_strings_list = job.split('\n')
           #print(f"NEW JOB: \n {job}")
 
           # Error lines of one stack will be concatenated to this string
           error_stack = ''
-          
-          # go through lines in straight order
+           
+          #####################################################################
+          # start going over lines in job
+          #####################################################################
+
           for line in job_strings_list:
             #print(f"NEW JOB: \n {line}")
             #print(f"*{line}")
             
-            #---------------
             match_job_start_time = re.search(pattern_job_start_time, line)
             if match_job_start_time:
               out_list.append('Start time: ' + match_job_start_time.group(1) + '\n')
@@ -124,32 +140,31 @@ def match_file_pattern(archive_name, error_depth, job_depth):
               out_job_list.append('\nVBR version: ' + match_vbr_version.group(1))
               jobs.append('\nVBR version: ' + match_vbr_version.group(1))
               job_depth_counter += 1
+
+              # If defined limit of jobs is reached in current file -> break out of the loop and jump to the next file
               if job_depth != 0 and job_depth_counter >= job_depth:
                 break
-            #---------------
             
-             
+            # A bit cumbersome statement. If current error stack is interrupted by non-error string, 
+            # we add existing error stack to the list and nullify the current error stack
+            # By default, the each file is treated as 'clear' (doesn't contain errors)
             if not is_previous_line_error and not (lines_without_error > 1) and not is_file_clear:
-              #print('...')
               error_stack_list.append(error_stack)
               error_stack = ''
-              #error_depth_counter += 1
-              #print(f"depth is {depth}")
-              #print(f"depth_counter is {depth_counter}")
-
-              #if error_depth != 0 and error_depth_counter >= error_depth:
-                  #print(f"DEPTH OF {depth_counter - 1} reached")
-                  #break
       
+            # Try to match the pattern over the line
             match_error = pattern.match(line)
       
+            # Check if match occurred
             if match_error:
-              # Grab the whole matching line and apped it to out list
+              # If the error is found the file is not 'clear' anymore
+              is_file_clear = 0 
+
+              # Grab the whole matching line and append it to jobs list
               out_list.append(match_error.group())
               out_job_list.append(match_error.group())
               jobs.append(match_error.group())
 
-              is_file_clear = 0 
 
               # Append new line and error line to error_stack
               error_stack += '\n' + match_error.group()
@@ -162,6 +177,10 @@ def match_file_pattern(archive_name, error_depth, job_depth):
               is_previous_line_error = 0
               lines_without_error += 1 
            
+          #####################################################################
+          # stop going over lines in job
+          #####################################################################
+
           #print(out_job_list)
           # Add a delimiter between files
           delimiter = '\n' + ('-' * 30) + '\n'
@@ -180,11 +199,20 @@ def match_file_pattern(archive_name, error_depth, job_depth):
       #for i in error_stack_list[-error_depth:]:
       #    print(i)
 
-      print(f"file_elements: {file_elements})")
+      #print(f"file_elements: {file_elements})")
 
+
+      #####################################################################
+      # stop going over jobs in job list
+      #####################################################################
+
+      # go over file details (such as, filename, file size, list of jobs)
       for file_element in file_elements:
+          # if the element is list... 
           if isinstance(file_element, list):
+              # ...start going over the jobs inside the list
               for job in file_element:
+                  # for 
                   for job_element in job:
                       if isinstance(job_element, list):
                           for error_stack in job_element:
@@ -199,5 +227,9 @@ def match_file_pattern(archive_name, error_depth, job_depth):
       #    print(job)
       #    for i in error_stack_list[-error_depth:]:
       #        print(i)
+
+  #####################################################################
+  # stop going over matching files in archive
+  #####################################################################
   
 match_file_pattern(archive_name, error_depth, job_depth)
