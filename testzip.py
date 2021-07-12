@@ -67,11 +67,11 @@ def match_file_pattern(archive_name, error_depth, job_depth):
       is_file_clear = 1
       # add log file name to a file then append the matched to a reversed list
 
-      # print('File:', filename)
+      print('File:', filename)
       bytes_archive = z.read(filename)
   
       # Add file name
-      file_name = "File: " + filename
+      file_name = "File: " + filename + '\n'
       out_list.append(file_name)
       out_job_list.append(file_name)
       
@@ -79,6 +79,15 @@ def match_file_pattern(archive_name, error_depth, job_depth):
       file_size = 'Size: ' + str(round(len(bytes_archive)/1024/1024,2)) + ' MB' + '\n'
       out_list.append(file_size)
       out_job_list.append(file_size)
+
+      #file_elements = ['', [], 'vasyan']
+      file_elements = ['', []]
+
+      #file_list[0] += file_name + file_size
+      file_details = file_elements[0] += file_name + file_size
+      #file_details += file_name + file_size
+      jobs = file_elements[1]
+
   
   
       # Decode bytes for current log file in archive 
@@ -106,12 +115,14 @@ def match_file_pattern(archive_name, error_depth, job_depth):
             if match_job_start_time:
               out_list.append('Start time: ' + match_job_start_time.group(1) + '\n')
               out_job_list.append('Start time: ' + match_job_start_time.group(1) + '\n')
+              jobs.append('Start time: ' + match_job_start_time.group(1) + '\n')
 
 
             match_vbr_version = re.search(pattern_vbr_version, line)
             if match_vbr_version:
               out_list.append('\nVBR version: ' + match_vbr_version.group(1))
               out_job_list.append('\nVBR version: ' + match_vbr_version.group(1))
+              jobs.append('\nVBR version: ' + match_vbr_version.group(1))
               job_depth_counter += 1
               if job_depth != 0 and job_depth_counter >= job_depth:
                 break
@@ -136,6 +147,7 @@ def match_file_pattern(archive_name, error_depth, job_depth):
               # Grab the whole matching line and apped it to out list
               out_list.append(match_error.group())
               out_job_list.append(match_error.group())
+              jobs.append(match_error.group())
 
               is_file_clear = 0 
 
@@ -155,6 +167,7 @@ def match_file_pattern(archive_name, error_depth, job_depth):
           delimiter = '\n' + ('-' * 30) + '\n'
           out_list.append(delimiter)
           out_job_list.append(delimiter)
+          #jobs.append(delimiter)
   
       #for i in out_job_list:
       #    print(i)
@@ -167,12 +180,20 @@ def match_file_pattern(archive_name, error_depth, job_depth):
       #for i in error_stack_list[-error_depth:]:
       #    print(i)
 
-      for job in job_out:
-          for job_element in job:
-              if isinstance(job_element, list):
-                  for error_stack in job_element:
-                      print(error_stack)
-              print(job_element)
+      print(f"file_elements: {file_elements})")
+
+      for file_element in file_elements:
+          if isinstance(file_element, list):
+              for job in file_element:
+                  for job_element in job:
+                      if isinstance(job_element, list):
+                          for error_stack in job_element:
+                              print(error_stack)
+                      print(job_element)
+          else:
+              #print(file_element)
+              print(f"file_element: {file_element})")
+          #print(f"file_elements: {file_elements})")
       # Should return last N jobs and last M errors stacks
       #for job in out_job_list[-job_depth:]:
       #    print(job)
