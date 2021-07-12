@@ -164,9 +164,15 @@ def match_file_pattern(archive_name, error_depth, job_depth):
       job_depth = 1
 
       # Working good, but only shows last N error stacks
-      for i in error_stack_list[-error_depth:]:
-          print(i)
+      #for i in error_stack_list[-error_depth:]:
+      #    print(i)
 
+      for job in job_out:
+          for job_element in job:
+              if isinstance(job_element, list):
+                  for error_stack in job_element:
+                      print(error_stack)
+              print(job_element)
       # Should return last N jobs and last M errors stacks
       #for job in out_job_list[-job_depth:]:
       #    print(job)
