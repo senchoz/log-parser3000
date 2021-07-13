@@ -88,6 +88,7 @@ def match_file_pattern(archive_name, error_depth, job_depth):
       file_size = 'Size: ' + str(round(len(bytes_archive)/1024/1024,2)) + ' MB' + '\n'
       out_list.append(file_size)
       out_job_list.append(file_size)
+      #print(out_job_list)
 
       #file_elements = ['', [], 'vasyan']
       file_elements = ['', []]
@@ -122,16 +123,18 @@ def match_file_pattern(archive_name, error_depth, job_depth):
           #####################################################################
           # start going over lines in job
           #####################################################################
-
+          i = 0
           for line in job_strings_list:
             #print(f"NEW JOB: \n {line}")
-            #print(f"*{line}")
+            #print(f"{i}*{line}")
+            i += 1
             
             match_job_start_time = re.search(pattern_job_start_time, line)
             if match_job_start_time:
               out_list.append('Start time: ' + match_job_start_time.group(1) + '\n')
               out_job_list.append('Start time: ' + match_job_start_time.group(1) + '\n')
               jobs.append('Start time: ' + match_job_start_time.group(1) + '\n')
+              print(jobs)
 
 
             match_vbr_version = re.search(pattern_vbr_version, line)
@@ -148,12 +151,17 @@ def match_file_pattern(archive_name, error_depth, job_depth):
             # A bit cumbersome statement. If current error stack is interrupted by non-error string, 
             # we add existing error stack to the list and nullify the current error stack
             # By default, the each file is treated as 'clear' (doesn't contain errors)
-            if not is_previous_line_error and not (lines_without_error > 1) and not is_file_clear:
+
+            # Try to match the pattern over the line
+            match_error = pattern.match(line)
+      
+            #if not is_previous_line_error and not (lines_without_error > 1) and not is_file_clear:
+            if is_previous_line_error and not match_error and not is_file_clear:
               error_stack_list.append(error_stack)
               error_stack = ''
       
             # Try to match the pattern over the line
-            match_error = pattern.match(line)
+            #match_error = pattern.match(line)
       
             # Check if match occurred
             if match_error:
@@ -193,34 +201,37 @@ def match_file_pattern(archive_name, error_depth, job_depth):
       #print(error_stack_list)
   
       error_depth = 3
-      job_depth = 1
-
-      # Working good, but only shows last N error stacks
-      #for i in error_stack_list[-error_depth:]:
-      #    print(i)
-
-      #print(f"file_elements: {file_elements})")
-
+      job_depth = 2
 
       #####################################################################
       # stop going over jobs in job list
       #####################################################################
 
+      print(f"file_elements[1]: {file_elements[1]}")
+
       # go over file details (such as, filename, file size, list of jobs)
       for file_element in file_elements:
-          # if the element is list... 
+          # if the element is list then it is a list of jobs... 
+          #print(isinstance(file_element, list))
           if isinstance(file_element, list):
-              # ...start going over the jobs inside the list
+              # ...so we start going over the jobs inside the list
               for job in file_element:
-                  # for 
+                  # go over elements inside the job, like 'VBR version', 'Job options', error stack list
                   for job_element in job:
+                      # if the element inside the job is list, than it's an error stack list...
+                      #print(f"Is {job_element} list? {isinstance(job_element, list)}")
                       if isinstance(job_element, list):
+                          # ...so we start going over the stacks inside the error list
                           for error_stack in job_element:
                               print(error_stack)
-                      print(job_element)
+                              #print()
+                      # if the element inside the job is not list, then we just putting it out as a string
+                      else:
+                          #print(job_element)
+                          pass
+          # if the element is not list, then we just putting it out as a string
           else:
-              #print(file_element)
-              print(f"file_element: {file_element})")
+              print(f"file_element: {file_element}")
           #print(f"file_elements: {file_elements})")
       # Should return last N jobs and last M errors stacks
       #for job in out_job_list[-job_depth:]:
